@@ -1,4 +1,3 @@
-from fileinput import filename
 import os
 from typing import Dict, Any
 
@@ -9,12 +8,12 @@ from calphy.routines import routine_fe, routine_ts
 from calphy.postprocessing import gather_results
 from contextlib import contextmanager
 import pandas as pd
-from pandas import DataFrame
+from pydantic import ValidationError
 from pyiron_lammps.structure import structure_to_lammps, LammpsStructure
 from ruamel.yaml import YAML
 
 @contextmanager
-def _working_directory_context(path):
+def _working_directory_context(path: str):
     prev_cwd = os.getcwd()
     os.makedirs(path, exist_ok=True)
     os.chdir(path)
@@ -23,19 +22,19 @@ def _working_directory_context(path):
     finally:
         os.chdir(prev_cwd)
 
-def _save_calphy_input_yaml(input_class : Calculation, folder : str):
+def _save_calphy_input_yaml(input_class: Calculation, folder_name: str):
     yaml = YAML()
     yaml.indent(mapping=2, sequence=2)
 
     input_data = {"calculations": [input_class.model_dump()]}
-    with open(f"{folder}/input_file.yaml", "w") as fout:
+    with open(f"{folder_name}/my_input_file.yaml", "w") as fout:
         yaml.dump(input_data, fout)
 
 def _write_structure(
-        structure: Atoms, 
-        potential_df: DataFrame, 
-        file_name: str, 
-        working_directory: str):
+    structure: Atoms, 
+    potential_df: pd.DataFrame, 
+    file_name: str, 
+    working_directory: str):
     """
     Write structure to file
 
@@ -63,7 +62,7 @@ def _write_structure(
         )
     lmp_structure.write_file(file_name=file_name, cwd=working_directory)
 
-def _ensure_potential(calphy_parameters, potential_df):
+def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFrame):
 
     if "pair_style" not in calphy_parameters or "pair_coeff" not in calphy_parameters:
 
@@ -82,7 +81,7 @@ def _ensure_potential(calphy_parameters, potential_df):
     
     return calphy_parameters
 
-def _ensure_elements_and_masses(calphy_parameters, potential_df, input_structure):
+def _ensure_elements_and_masses(input_structure: Atoms, potential_df: pd.DataFrame, calphy_parameters: Dict[str, Any]):
     """
     Ensure 'element' and 'mass' keys exist in calphy_parameters.
     If missing, compute them from pair_coeff and input_structure.
@@ -107,13 +106,15 @@ def _ensure_elements_and_masses(calphy_parameters, potential_df, input_structure
 
     return calphy_parameters
 
-def _create_input_class(input_parameters : Dict) -> Calculation:
-    input_class = Calculation(**input_parameters)
-    return input_class
+def _create_input_class(input_parameters: Dict[str, Any]) -> Calculation:
+    try:
+        return Calculation.model_validate(input_parameters)
+    except ValidationError as e:
+        raise ValueError(f"Invalid parameters: {e}") from e
 
 def _build_calphy_config(
-    input_structure,
-    potential_df,
+    input_structure: Atoms,
+    potential_df: pd.DataFrame,
     calphy_parameters: Dict[str, Any],
 ) -> Calculation:
     
@@ -130,7 +131,7 @@ def _build_calphy_config(
 
     ## FIXME: Check calphy pyiron job for handling elements, masses etc
     input_parameters = _ensure_potential(calphy_parameters, potential_df)
-    input_parameters = _ensure_elements_and_masses(input_parameters, potential_df, input_structure)
+    input_parameters = _ensure_elements_and_masses(input_structure, potential_df, input_parameters)
     
     input_class = _create_input_class(
         input_parameters=input_parameters
@@ -138,7 +139,7 @@ def _build_calphy_config(
 
     return input_class
 
-def _run_calphy(input_class : Calculation):
+def _run_calphy(input_class: Calculation):
     curr_wd = os.getcwd()
     with _working_directory_context(curr_wd):
         if input_class.reference_phase == "solid":
@@ -155,7 +156,7 @@ def _run_calphy(input_class : Calculation):
         else:
             raise ValueError("Unknown mode")
 
-def gather_calphy_results(parent_directory):
+def gather_calphy_results(parent_directory: str):
     with _working_directory_context(parent_directory):
         df = gather_results('.')
     return df
@@ -180,9 +181,9 @@ def calc_free_energy_with_calphy(
             calphy_parameters=calphy_parameters
         )
 
-        # save_calphy_input_yaml(
+        # _save_calphy_input_yaml(
         #     input_class=input_class, 
-        #     folder=working_directory
+        #     folder_name=working_directory
         # )
 
         _run_calphy(input_class=input_class)
