@@ -1,2 +1,2 @@
 # calphy_workflows
-Repository for workflows involving calphy and executorlib.
+Workflows to run calphy free energy calculations with executorlib.
