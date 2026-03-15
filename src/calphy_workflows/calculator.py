@@ -22,12 +22,17 @@ def _working_directory_context(path: str):
     finally:
         os.chdir(prev_cwd)
 
-def _save_calphy_input_yaml(input_class: Calculation, folder_name: str):
+def _save_calphy_input_yaml(
+    input_class: Calculation, 
+    folder_name: str,
+    file_name: str = "my_input_file.yaml"
+) -> None:
     yaml = YAML()
     yaml.indent(mapping=2, sequence=2)
 
     input_data = {"calculations": [input_class.model_dump()]}
-    with open(f"{folder_name}/my_input_file.yaml", "w") as fout:
+    output_path = os.path.join(folder_name, file_name)
+    with open(output_path, "w") as fout:
         yaml.dump(input_data, fout)
 
 def _write_structure(
