@@ -3,7 +3,7 @@ from typing import Dict, Any, Tuple
 
 from ase.data import chemical_symbols, atomic_masses
 from ase.atoms import Atoms
-from calphy import Calculation, Solid, Liquid 
+from calphy import Calculation, Solid, Liquid
 from calphy.routines import routine_fe, routine_ts
 from calphy.postprocessing import gather_results
 from contextlib import contextmanager
@@ -23,7 +23,7 @@ def _working_directory_context(path: str):
         os.chdir(prev_cwd)
 
 def _save_calphy_input_yaml(
-    input_class: Calculation, 
+    input_class: Calculation,
     folder_name: str,
     file_name: str = "my_input_file.yaml"
 ) -> None:
@@ -36,9 +36,9 @@ def _save_calphy_input_yaml(
         yaml.dump(input_data, fout)
 
 def _write_structure(
-    structure: Atoms, 
-    potential_df: pd.DataFrame, 
-    file_name: str, 
+    structure: Atoms,
+    potential_df: pd.DataFrame,
+    file_name: str,
     working_directory: str
 ) -> None:
     """
@@ -75,7 +75,7 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
         [pair_style, pair_coeff] = [
             line.replace("pair_style", "")
                 .replace("pair_coeff", "")
-                .strip() 
+                .strip()
             for line in potential_df['Config'].tolist()[0]
             ]
         
@@ -88,8 +88,8 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
     return calphy_parameters
 
 def _ensure_elements_and_masses(
-    input_structure: Atoms, 
-    potential_df: pd.DataFrame, 
+    input_structure: Atoms,
+    potential_df: pd.DataFrame,
     calphy_parameters: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
