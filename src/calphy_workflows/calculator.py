@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 from ase.data import chemical_symbols, atomic_masses
 from ase.atoms import Atoms
@@ -176,7 +176,7 @@ def calc_free_energy_with_calphy(
     calphy_parameters: Dict[str, Any],
     working_directory: str,
     user_dict: Dict[str, Any],
-) -> tuple[Calculation, pd.DataFrame]: 
+) -> Tuple[Calculation, pd.DataFrame]: 
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
     elif working_directory is None:
