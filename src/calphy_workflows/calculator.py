@@ -1,9 +1,9 @@
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 from ase.data import chemical_symbols, atomic_masses
 from ase.atoms import Atoms
-from calphy import Calculation, Solid, Liquid 
+from calphy import Calculation, Solid, Liquid
 from calphy.routines import routine_fe, routine_ts
 from calphy.postprocessing import gather_results
 from contextlib import contextmanager
@@ -22,19 +22,25 @@ def _working_directory_context(path: str):
     finally:
         os.chdir(prev_cwd)
 
-def _save_calphy_input_yaml(input_class: Calculation, folder_name: str):
+def _save_calphy_input_yaml(
+    input_class: Calculation,
+    folder_name: str,
+    file_name: str = "my_input_file.yaml"
+) -> None:
     yaml = YAML()
     yaml.indent(mapping=2, sequence=2)
 
     input_data = {"calculations": [input_class.model_dump()]}
-    with open(f"{folder_name}/my_input_file.yaml", "w") as fout:
+    output_path = os.path.join(folder_name, file_name)
+    with open(output_path, "w") as fout:
         yaml.dump(input_data, fout)
 
 def _write_structure(
-    structure: Atoms, 
-    potential_df: pd.DataFrame, 
-    file_name: str, 
-    working_directory: str):
+    structure: Atoms,
+    potential_df: pd.DataFrame,
+    file_name: str,
+    working_directory: str
+) -> None:
     """
     Write structure to file
 
@@ -62,14 +68,14 @@ def _write_structure(
         )
     lmp_structure.write_file(file_name=file_name, cwd=working_directory)
 
-def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFrame):
+def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFrame) -> Dict[str, Any]:
 
     if "pair_style" not in calphy_parameters or "pair_coeff" not in calphy_parameters:
 
         [pair_style, pair_coeff] = [
             line.replace("pair_style", "")
                 .replace("pair_coeff", "")
-                .strip() 
+                .strip()
             for line in potential_df['Config'].tolist()[0]
             ]
         
@@ -81,7 +87,11 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
     
     return calphy_parameters
 
-def _ensure_elements_and_masses(input_structure: Atoms, potential_df: pd.DataFrame, calphy_parameters: Dict[str, Any]):
+def _ensure_elements_and_masses(
+    input_structure: Atoms,
+    potential_df: pd.DataFrame,
+    calphy_parameters: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Ensure 'element' and 'mass' keys exist in calphy_parameters.
     If missing, compute them from pair_coeff and input_structure.
@@ -124,7 +134,8 @@ def _build_calphy_config(
             structure=input_structure, 
             potential_df=potential_df, 
             file_name='input_structure.data', 
-            working_directory=curr_wd)
+            working_directory=curr_wd
+        )
         
         lattice_file = f'{curr_wd}/input_structure.data'
         calphy_parameters["lattice"] = lattice_file
@@ -133,13 +144,11 @@ def _build_calphy_config(
     input_parameters = _ensure_potential(calphy_parameters, potential_df)
     input_parameters = _ensure_elements_and_masses(input_structure, potential_df, input_parameters)
     
-    input_class = _create_input_class(
-        input_parameters=input_parameters
-    )
+    input_class = _create_input_class(input_parameters=input_parameters)
 
     return input_class
 
-def _run_calphy(input_class: Calculation):
+def _run_calphy(input_class: Calculation) -> None:
     curr_wd = os.getcwd()
     with _working_directory_context(curr_wd):
         if input_class.reference_phase == "solid":
@@ -156,7 +165,7 @@ def _run_calphy(input_class: Calculation):
         else:
             raise ValueError("Unknown mode")
 
-def gather_calphy_results(parent_directory: str):
+def gather_calphy_results(parent_directory: str) -> pd.DataFrame:
     with _working_directory_context(parent_directory):
         df = gather_results('.')
     return df
@@ -167,7 +176,7 @@ def calc_free_energy_with_calphy(
     calphy_parameters: Dict[str, Any],
     working_directory: str,
     user_dict: Dict[str, Any],
-):  
+) -> Tuple[Calculation, pd.DataFrame]: 
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
     elif working_directory is None:

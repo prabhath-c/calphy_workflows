@@ -19,7 +19,8 @@ dependencies = [
     "calphy", 
     "pandas",
     "pyiron-lammps",
-    "ruamel.yaml"
+    "ruamel.yaml",
+    "pydantic>=2,<3"
 ]
 
 [project.optional-dependencies]
