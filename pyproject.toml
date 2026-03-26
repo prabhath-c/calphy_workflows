@@ -20,7 +20,7 @@ dependencies = [
     "pandas",
     "pyiron-lammps",
     "ruamel.yaml",
-    "pydantic"
+    "pydantic>=2,<3"
 ]
 
 [project.optional-dependencies]
