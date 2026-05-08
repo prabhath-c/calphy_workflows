@@ -10,6 +10,81 @@ from pydantic import ValidationError
 from pyiron_lammps.structure import structure_to_lammps, LammpsStructure
 from ruamel.yaml import YAML
 
+def _validate_input_structure(structure: Atoms) -> None:
+    """Validate that input structure is a valid ASE Atoms object.
+    
+    Parameters
+    ----------
+    structure : Atoms
+        Structure to validate
+        
+    Raises
+    ------
+    TypeError
+        If structure is not an ASE Atoms object
+    ValueError
+        If structure is empty
+    """
+    if not isinstance(structure, Atoms):
+        raise TypeError(f"input_structure must be an ASE Atoms object, got {type(structure)}")
+    if len(structure) == 0:
+        raise ValueError("input_structure cannot be empty")
+
+def _validate_potential_df(potential_df: pd.DataFrame) -> None:
+    """Validate that potential_df has required columns from pyiron.
+    
+    Parameters
+    ----------
+    potential_df : pd.DataFrame
+        Potential DataFrame to validate
+        
+    Raises
+    ------
+    TypeError
+        If potential_df is not a DataFrame
+    ValueError
+        If required columns are missing
+    """
+    if not isinstance(potential_df, pd.DataFrame):
+        raise TypeError(f"potential_df must be a pandas DataFrame, got {type(potential_df)}")
+    
+    required_cols = {'Species', 'Config'}
+    missing_cols = required_cols - set(potential_df.columns)
+    if missing_cols:
+        raise ValueError(f"potential_df missing required columns: {missing_cols}")
+
+def _validate_calphy_parameters(calphy_parameters: Dict[str, Any]) -> None:
+    """Validate that calphy_parameters has required keys.
+    
+    Parameters
+    ----------
+    calphy_parameters : Dict[str, Any]
+        Parameters to validate
+        
+    Raises
+    ------
+    TypeError
+        If calphy_parameters is not a dictionary
+    ValueError
+        If required keys are missing
+    """
+    if not isinstance(calphy_parameters, dict):
+        raise TypeError(f"calphy_parameters must be a dictionary, got {type(calphy_parameters)}")
+    
+    required_keys = {'mode', 'temperature', 'reference_phase'}
+    missing_keys = required_keys - set(calphy_parameters.keys())
+    if missing_keys:
+        raise ValueError(f"calphy_parameters missing required keys: {missing_keys}")
+    
+    # Validate mode and reference_phase values
+    valid_modes = {'fe', 'ts'}
+    if calphy_parameters['mode'] not in valid_modes:
+        raise ValueError(f"mode must be 'fe' or 'ts', got '{calphy_parameters['mode']}'")
+    
+    valid_phases = {'solid', 'liquid'}
+    if calphy_parameters['reference_phase'] not in valid_phases:
+        raise ValueError(f"reference_phase must be 'solid' or 'liquid', got '{calphy_parameters['reference_phase']}'")
+
 @contextmanager
 def _working_directory_context(path: str):
     """Context manager to temporarily change working directory.
@@ -103,22 +178,37 @@ def _write_structure(
     ------
     ValueError
         If structure contains elements not supported by the potential
+    RuntimeError
+        If file writing fails
     """
-    lmp_structure = LammpsStructure()
-    lmp_structure.potential = potential_df
-    lmp_structure.atom_type = "atomic"
+    try:
+        lmp_structure = LammpsStructure()
+        lmp_structure.potential = potential_df
+        lmp_structure.atom_type = "atomic"
 
-    # lmp_structure.el_eam_lst = list(lmp_structure.potential ["Species"][0])
-    lmp_structure.el_eam_lst = lmp_structure.potential['Species'].to_list()[0]
-    lmp_structure.structure = structure_to_lammps(structure)
+        # lmp_structure.el_eam_lst = list(lmp_structure.potential ["Species"][0])
+        lmp_structure.el_eam_lst = lmp_structure.potential['Species'].to_list()[0]
+        lmp_structure.structure = structure_to_lammps(structure)
 
-    if not set(lmp_structure.structure.get_chemical_symbols()).issubset(
-        set(lmp_structure.el_eam_lst)
-    ):
-        raise ValueError(
-            "The selected potentials do not support the given combination of elements."
-        )
-    lmp_structure.write_file(file_name=file_name, cwd=working_directory)
+        structure_elements = set(lmp_structure.structure.get_chemical_symbols())
+        potential_elements = set(lmp_structure.el_eam_lst)
+        
+        if not structure_elements.issubset(potential_elements):
+            unsupported = structure_elements - potential_elements
+            raise ValueError(
+                f"The selected potential does not support element(s): {unsupported}. "
+                f"Potential supports: {potential_elements}"
+            )
+        
+        lmp_structure.write_file(file_name=file_name, cwd=working_directory)
+    
+    except ValueError:
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to write structure to file '{file_name}' in '{working_directory}': "
+            f"{type(e).__name__}: {str(e)}"
+        ) from e
 
 def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFrame) -> Dict[str, Any]:
     """Extract and ensure pair_style and pair_coeff parameters from potential.
@@ -137,23 +227,44 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
     -------
     Dict[str, Any]
         Updated calphy_parameters with pair_style and pair_coeff set
-    """
-    if "pair_style" not in calphy_parameters or "pair_coeff" not in calphy_parameters:
-
-        [pair_style, pair_coeff] = [
-            line.replace("pair_style", "")
-                .replace("pair_coeff", "")
-                .strip()
-            for line in potential_df['Config'].tolist()[0]
-            ]
         
-        # update dict if missing
-        if "pair_style" not in calphy_parameters:
-            calphy_parameters["pair_style"] = pair_style
-        if "pair_coeff" not in calphy_parameters:
-            calphy_parameters["pair_coeff"] = pair_coeff
+    Raises
+    ------
+    ValueError
+        If Config column is missing or cannot be parsed
+    RuntimeError
+        If extraction fails
+    """
+    try:
+        if "pair_style" not in calphy_parameters or "pair_coeff" not in calphy_parameters:
+            if 'Config' not in potential_df.columns:
+                raise ValueError("'Config' column not found in potential_df")
+            
+            config_list = potential_df['Config'].tolist()
+            if not config_list or not config_list[0]:
+                raise ValueError("Config data is empty")
+
+            [pair_style, pair_coeff] = [
+                line.replace("pair_style", "")
+                    .replace("pair_coeff", "")
+                    .strip()
+                for line in config_list[0]
+                ]
+            
+            # update dict if missing
+            if "pair_style" not in calphy_parameters:
+                calphy_parameters["pair_style"] = pair_style
+            if "pair_coeff" not in calphy_parameters:
+                calphy_parameters["pair_coeff"] = pair_coeff
+        
+        return calphy_parameters
     
-    return calphy_parameters
+    except ValueError:
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to extract potential parameters: {type(e).__name__}: {str(e)}"
+        ) from e
 
 def _ensure_elements_and_masses(
     input_structure: Atoms,
@@ -177,26 +288,42 @@ def _ensure_elements_and_masses(
     -------
     Dict[str, Any]
         Updated calphy_parameters with element and mass keys set
-    """
-
-    if "element" not in calphy_parameters or "mass" not in calphy_parameters:
-
-        structure_symbols = list(set(input_structure.get_chemical_symbols()))
-
-        element_symbols = potential_df["Species"].tolist()[0]
-        # masses = list([atomic_masses[chemical_symbols.index(el)] for el in element_symbols])    
         
-        masses = [
-            atomic_masses[chemical_symbols.index(el)] if el in structure_symbols else 1.0
-            for el in element_symbols
-        ]
+    Raises
+    ------
+    ValueError
+        If Species column is missing from potential_df
+    RuntimeError
+        If mass calculation fails
+    """
+    try:
+        if "element" not in calphy_parameters or "mass" not in calphy_parameters:
+            if 'Species' not in potential_df.columns:
+                raise ValueError("'Species' column not found in potential_df")
 
-        if "element" not in calphy_parameters:
-            calphy_parameters["element"] = element_symbols
-        if "mass" not in calphy_parameters:
-            calphy_parameters["mass"] = masses
+            structure_symbols = list(set(input_structure.get_chemical_symbols()))
 
-    return calphy_parameters
+            element_symbols = potential_df["Species"].tolist()[0]
+            # masses = list([atomic_masses[chemical_symbols.index(el)] for el in element_symbols])    
+            
+            masses = [
+                atomic_masses[chemical_symbols.index(el)] if el in structure_symbols else 1.0
+                for el in element_symbols
+            ]
+
+            if "element" not in calphy_parameters:
+                calphy_parameters["element"] = element_symbols
+            if "mass" not in calphy_parameters:
+                calphy_parameters["mass"] = masses
+
+        return calphy_parameters
+    
+    except ValueError:
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to set elements and masses: {type(e).__name__}: {str(e)}"
+        ) from e
 
 def _create_input_class(input_parameters: Dict[str, Any]) -> Calculation:
     """Create and validate a calphy Calculation object from input parameters.
@@ -250,27 +377,42 @@ def _build_calphy_config(
     -------
     Calculation
         Configured and validated calphy Calculation object
-    """
-    if not os.path.exists(working_directory):
-        os.makedirs(working_directory)
-    elif working_directory is None:
-        working_directory = os.getcwd()
-    
-    if 'lattice' not in calphy_parameters:
-        _write_structure(
-            structure=input_structure, 
-            potential_df=potential_df, 
-            file_name='input_structure.data', 
-            working_directory=working_directory
-        )
         
-        lattice_file = f'{working_directory}/input_structure.data'
-        calphy_parameters["lattice"] = lattice_file
+    Raises
+    ------
+    ValueError
+        If configuration is invalid
+    RuntimeError
+        If configuration building fails
+    """
+    try:
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+        elif working_directory is None:
+            working_directory = os.getcwd()
+        
+        if 'lattice' not in calphy_parameters:
+            _write_structure(
+                structure=input_structure, 
+                potential_df=potential_df, 
+                file_name='input_structure.data', 
+                working_directory=working_directory
+            )
+            
+            lattice_file = f'{working_directory}/input_structure.data'
+            calphy_parameters["lattice"] = lattice_file
 
-    ## FIXME: Check calphy pyiron job for handling elements, masses etc
-    input_parameters = _ensure_potential(calphy_parameters, potential_df)
-    input_parameters = _ensure_elements_and_masses(input_structure, potential_df, input_parameters)
+        ## FIXME: Check calphy pyiron job for handling elements, masses etc
+        input_parameters = _ensure_potential(calphy_parameters, potential_df)
+        input_parameters = _ensure_elements_and_masses(input_structure, potential_df, input_parameters)
+        
+        input_class = _create_input_class(input_parameters=input_parameters)
+
+        return input_class
     
-    input_class = _create_input_class(input_parameters=input_parameters)
-
-    return input_class
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to build calphy configuration: {type(e).__name__}: {str(e)}"
+        ) from e

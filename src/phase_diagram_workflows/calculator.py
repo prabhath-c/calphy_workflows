@@ -8,7 +8,14 @@ from calphy.postprocessing import gather_results
 import pandas as pd
 
 
-from .helpers import _working_directory_context, _save_calphy_input_yaml, _build_calphy_config
+from .helpers import (
+    _working_directory_context,
+    _save_calphy_input_yaml,
+    _build_calphy_config,
+    _validate_input_structure,
+    _validate_potential_df,
+    _validate_calphy_parameters,
+)
 
 def _run_calphy(input_class: Calculation) -> None:
     """Execute calphy calculation based on the input configuration.
@@ -23,22 +30,36 @@ def _run_calphy(input_class: Calculation) -> None:
     ValueError
         If reference_phase is not 'solid' or 'liquid'
         If mode is not 'fe' (free energy) or 'ts' (temperature scaling)
+    RuntimeError
+        If calphy execution fails
     """
     curr_wd = os.getcwd()
     with _working_directory_context(curr_wd):
-        if input_class.reference_phase == "solid":
-            job = Solid(calculation=input_class, simfolder=curr_wd)
-        elif input_class.reference_phase == "liquid":
-            job = Liquid(calculation=input_class, simfolder=curr_wd)
-        else:
-            raise ValueError("Unknown reference state")
+        try:
+            if input_class.reference_phase == "solid":
+                job = Solid(calculation=input_class, simfolder=curr_wd)
+            elif input_class.reference_phase == "liquid":
+                job = Liquid(calculation=input_class, simfolder=curr_wd)
+            else:
+                raise ValueError(
+                    f"Invalid reference_phase: {input_class.reference_phase}. "
+                    "Must be 'solid' or 'liquid'"
+                )
 
-        if input_class.mode == "fe":
-            routine_fe(job)
-        elif input_class.mode == "ts":
-            routine_ts(job)
-        else:
-            raise ValueError("Unknown mode")
+            if input_class.mode == "fe":
+                routine_fe(job)
+            elif input_class.mode == "ts":
+                routine_ts(job)
+            else:
+                raise ValueError(
+                    f"Invalid mode: {input_class.mode}. Must be 'fe' or 'ts'"
+                )
+        except ValueError:
+            raise
+        except Exception as e:
+            raise RuntimeError(
+                f"Calphy execution failed with {type(e).__name__}: {str(e)}"
+            ) from e
 
 def gather_calphy_results(parent_directory: str) -> pd.DataFrame:
     """Gather and return results from calphy calculations.
@@ -95,30 +116,58 @@ def calc_free_energy_with_calphy(
         Tuple containing:
         - Calculation object: The calphy Calculation instance used
         - pd.DataFrame: Results DataFrame from gather_calphy_results()
+        
+    Raises
+    ------
+    TypeError
+        If input types are incorrect
+    ValueError
+        If required parameters are missing or invalid
+    RuntimeError
+        If calculation execution fails
     """
-    if not os.path.exists(working_directory):
-        os.makedirs(working_directory)
-    elif working_directory is None:
-        working_directory = os.getcwd()
-        print(f"No working directory provided. Using current directory {working_directory} as working directory.")
+    try:
+        # Validate all inputs
+        _validate_input_structure(input_structure)
+        _validate_potential_df(potential_df)
+        _validate_calphy_parameters(calphy_parameters)
+        
+        if not isinstance(working_directory, str):
+            raise TypeError(f"working_directory must be a string, got {type(working_directory)}")
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"Input validation failed: {str(e)}") from e
 
-    with _working_directory_context(working_directory):
-        input_class = _build_calphy_config(
-            input_structure=input_structure,
-            potential_df=potential_df,
-            calphy_parameters=calphy_parameters,
-            working_directory=working_directory
-        )
+    try:
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+        elif working_directory is None:
+            working_directory = os.getcwd()
+            print(f"No working directory provided. Using current directory {working_directory} as working directory.")
 
-        # _save_calphy_input_yaml(
-        #     input_class=input_class, 
-        #     folder_name=working_directory
-        # )
+        with _working_directory_context(working_directory):
+            input_class = _build_calphy_config(
+                input_structure=input_structure,
+                potential_df=potential_df,
+                calphy_parameters=calphy_parameters,
+                working_directory=working_directory
+            )
 
-        _run_calphy(input_class=input_class)
+            # _save_calphy_input_yaml(
+            #     input_class=input_class, 
+            #     folder_name=working_directory
+            # )
 
-    abs_working_dir = os.path.abspath(working_directory)
-    parent_dir = os.path.dirname(abs_working_dir)
-    df = gather_calphy_results(parent_dir)
+            _run_calphy(input_class=input_class)
 
-    return input_class, df
+        abs_working_dir = os.path.abspath(working_directory)
+        parent_dir = os.path.dirname(abs_working_dir)
+        df = gather_calphy_results(parent_dir)
+
+        return input_class, df
+    
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            f"Free energy calculation workflow failed: {type(e).__name__}: {str(e)}"
+        ) from e
