@@ -119,8 +119,6 @@ def calc_free_energy_with_calphy(
         
     Raises
     ------
-    TypeError
-        If input types are incorrect
     ValueError
         If required parameters are missing or invalid
     RuntimeError
@@ -131,10 +129,7 @@ def calc_free_energy_with_calphy(
         _validate_input_structure(input_structure)
         _validate_potential_df(potential_df)
         _validate_calphy_parameters(calphy_parameters)
-        
-        if not isinstance(working_directory, str):
-            raise TypeError(f"working_directory must be a string, got {type(working_directory)}")
-    except (TypeError, ValueError) as e:
+    except ValueError as e:
         raise ValueError(f"Input validation failed: {str(e)}") from e
 
     try:

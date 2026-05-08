@@ -11,7 +11,7 @@ from pyiron_lammps.structure import structure_to_lammps, LammpsStructure
 from ruamel.yaml import YAML
 
 def _validate_input_structure(structure: Atoms) -> None:
-    """Validate that input structure is a valid ASE Atoms object.
+    """Validate that input structure is not empty.
     
     Parameters
     ----------
@@ -20,13 +20,9 @@ def _validate_input_structure(structure: Atoms) -> None:
         
     Raises
     ------
-    TypeError
-        If structure is not an ASE Atoms object
     ValueError
         If structure is empty
     """
-    if not isinstance(structure, Atoms):
-        raise TypeError(f"input_structure must be an ASE Atoms object, got {type(structure)}")
     if len(structure) == 0:
         raise ValueError("input_structure cannot be empty")
 
@@ -40,21 +36,16 @@ def _validate_potential_df(potential_df: pd.DataFrame) -> None:
         
     Raises
     ------
-    TypeError
-        If potential_df is not a DataFrame
     ValueError
         If required columns are missing
     """
-    if not isinstance(potential_df, pd.DataFrame):
-        raise TypeError(f"potential_df must be a pandas DataFrame, got {type(potential_df)}")
-    
     required_cols = {'Species', 'Config'}
     missing_cols = required_cols - set(potential_df.columns)
     if missing_cols:
         raise ValueError(f"potential_df missing required columns: {missing_cols}")
 
 def _validate_calphy_parameters(calphy_parameters: Dict[str, Any]) -> None:
-    """Validate that calphy_parameters has required keys.
+    """Validate that calphy_parameters has required keys and valid values.
     
     Parameters
     ----------
@@ -63,14 +54,9 @@ def _validate_calphy_parameters(calphy_parameters: Dict[str, Any]) -> None:
         
     Raises
     ------
-    TypeError
-        If calphy_parameters is not a dictionary
     ValueError
-        If required keys are missing
+        If required keys are missing or have invalid values
     """
-    if not isinstance(calphy_parameters, dict):
-        raise TypeError(f"calphy_parameters must be a dictionary, got {type(calphy_parameters)}")
-    
     required_keys = {'mode', 'temperature', 'reference_phase'}
     missing_keys = required_keys - set(calphy_parameters.keys())
     if missing_keys:
