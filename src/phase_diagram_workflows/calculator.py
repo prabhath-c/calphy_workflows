@@ -133,11 +133,11 @@ def calc_free_energy_with_calphy(
         raise ValueError(f"Input validation failed: {str(e)}") from e
 
     try:
-        if not os.path.exists(working_directory):
-            os.makedirs(working_directory)
-        elif working_directory is None:
+        if working_directory is None:
             working_directory = os.getcwd()
             print(f"No working directory provided. Using current directory {working_directory} as working directory.")
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
 
         with _working_directory_context(working_directory):
             input_class = _build_calphy_config(

@@ -372,10 +372,10 @@ def _build_calphy_config(
         If configuration building fails
     """
     try:
+        if working_directory is None:
+            working_directory = os.getcwd()
         if not os.path.exists(working_directory):
             os.makedirs(working_directory)
-        elif working_directory is None:
-            working_directory = os.getcwd()
         
         if 'lattice' not in calphy_parameters:
             _write_structure(
