@@ -7,7 +7,6 @@ from calphy.routines import routine_fe, routine_ts
 from calphy.postprocessing import gather_results
 import pandas as pd
 
-
 from .helpers import (
     _working_directory_context,
     _save_calphy_input_yaml,
@@ -19,7 +18,7 @@ from .helpers import (
 
 def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
     """Execute calphy calculation based on the input configuration.
-    
+
     Parameters
     ----------
     input_class : Calculation
@@ -28,7 +27,7 @@ def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
         Optional LAMMPS library object from pylammpsmpi with embedded executor.
         If provided, the calculation will use this lmp object instead of creating
         its own, enabling executor-based parallel execution.
-        
+
     Raises
     ------
     ValueError
@@ -37,19 +36,21 @@ def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
     RuntimeError
         If calphy execution fails
     """
-    curr_wd = os.getcwd()
-    with _working_directory_context(curr_wd):
+    # Use the working directory from the lattice path (this is where files are written)
+    working_directory = str(input_class.lattice.parent)
+
+    with _working_directory_context(working_directory):
         try:
             if input_class.reference_phase == "solid":
                 if lmp is not None:
-                    job = Solid(calculation=input_class, simfolder=curr_wd, lmp=lmp)
+                    job = Solid(calculation=input_class, simfolder=working_directory, lmp=lmp)
                 else:
-                    job = Solid(calculation=input_class, simfolder=curr_wd)
+                    job = Solid(calculation=input_class, simfolder=working_directory)
             elif input_class.reference_phase == "liquid":
                 if lmp is not None:
-                    job = Liquid(calculation=input_class, simfolder=curr_wd, lmp=lmp)
+                    job = Liquid(calculation=input_class, simfolder=working_directory, lmp=lmp)
                 else:
-                    job = Liquid(calculation=input_class, simfolder=curr_wd)
+                    job = Liquid(calculation=input_class, simfolder=working_directory)
             else:
                 raise ValueError(
                     f"Invalid reference_phase: {input_class.reference_phase}. "
@@ -73,12 +74,12 @@ def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
 
 def gather_calphy_results(parent_directory: str) -> pd.DataFrame:
     """Gather and return results from calphy calculations.
-    
+
     Parameters
     ----------
     parent_directory : str
         Path to parent directory containing calphy calculation folders
-        
+
     Returns
     -------
     pd.DataFrame
@@ -97,10 +98,10 @@ def calc_free_energy_with_calphy(
     metadata_dict: Optional[Dict[str, Any]] = None
 ) -> Tuple[Calculation, pd.DataFrame]:
     """Main function to calculate free energy using calphy with LAMMPS potentials.
-    
+
     Orchestrates the entire workflow: configures calphy parameters, writes structure
     files in LAMMPS format, executes calphy calculations, and gathers results.
-    
+
     Parameters
     ----------
     input_structure : Atoms
@@ -125,14 +126,14 @@ def calc_free_energy_with_calphy(
     metadata_dict : Optional[Dict[str, Any]], optional
         Optional dictionary for storing user-defined metadata in executorlib's cache.
         Used when lmp is provided to enable result caching and retrieval.
-        
+
     Returns
     -------
     Tuple[Calculation, pd.DataFrame]
         Tuple containing:
         - Calculation object: The calphy Calculation instance used
         - pd.DataFrame: Results DataFrame from gather_calphy_results()
-        
+
     Examples
     --------
     # Basic usage without executor
@@ -142,7 +143,7 @@ def calc_free_energy_with_calphy(
         calphy_parameters=params,
         working_directory='output_dir'
     )
-    
+
     # With executor
     executor = SingleNodeExecutor()
     lmp = LammpsLibrary(cores=1, executor=executor)
@@ -154,7 +155,7 @@ def calc_free_energy_with_calphy(
         lmp=lmp,
         metadata_dict={'project': 'my_project', 'version': '1.0'}
     )
-        
+
     Raises
     ------
     ValueError
@@ -168,6 +169,7 @@ def calc_free_energy_with_calphy(
         _validate_input_structure(input_structure)
         _validate_potential_df(potential_df)
         _validate_calphy_parameters(calphy_parameters)
+        print("Input validation successful. Proceeding with calculation.")
     except (TypeError, ValueError) as e:
         raise ValueError(f"Input validation failed: {str(e)}") from e
 
@@ -187,7 +189,7 @@ def calc_free_energy_with_calphy(
             )
 
             # _save_calphy_input_yaml(
-            #     input_class=input_class, 
+            #     input_class=input_class,
             #     folder_name=working_directory
             # )
 
@@ -198,7 +200,7 @@ def calc_free_energy_with_calphy(
         df = gather_calphy_results(parent_dir)
 
         return input_class, df
-    
+
     except (ValueError, RuntimeError):
         raise
     except Exception as e:
