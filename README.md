@@ -97,7 +97,7 @@ phase_diagram_workflows/
 
 Check out the example notebooks in the `notebooks/` directory:
 
-- **Al_free_energy_executor_demo.ipynb** - Demonstrates executor integration
+- **[Al_free_energy_executor_demo.ipynb](notebooks/Al_free_energy_executor_demo.ipynb)** - Demonstrates executor integration
 
 ## 🤝 **Contributing**
 
