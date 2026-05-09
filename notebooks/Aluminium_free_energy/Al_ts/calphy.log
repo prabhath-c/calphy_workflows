@@ -1,0 +1,42 @@
+2026-05-09 09:01:27,923 calphy.helpers INFO     Temperature start: 300.000000 K, temperature stop: 600.000000 K, pressure: 0.000000 bar
+2026-05-09 09:01:27,923 calphy.helpers INFO     Pressure adjusted in iso
+2026-05-09 09:01:27,923 calphy.helpers INFO     Reference phase is solid
+2026-05-09 09:01:27,923 calphy.helpers INFO     Equilibration stage is done using nose-hoover barostat/thermostat
+2026-05-09 09:01:27,924 calphy.helpers INFO     Nose-Hoover thermostat damping is 0.100000
+2026-05-09 09:01:27,924 calphy.helpers INFO     Nose-Hoover barostat damping is 0.100000
+2026-05-09 09:01:27,924 calphy.helpers INFO     These values can be tuned by adding in the input file:
+2026-05-09 09:01:27,924 calphy.helpers INFO     nose_hoover:
+2026-05-09 09:01:27,924 calphy.helpers INFO        thermostat_damping: <float>
+2026-05-09 09:01:27,924 calphy.helpers INFO        barostat_damping: <float>
+2026-05-09 09:01:27,924 calphy.helpers INFO     Integration stage is done using Nose-Hoover thermostat and barostat when needed
+2026-05-09 09:01:27,924 calphy.helpers INFO     Thermostat damping is 0.100000
+2026-05-09 09:01:27,924 calphy.helpers INFO     Barostat damping is 0.100000
+2026-05-09 09:01:27,924 calphy.helpers INFO     108 atoms in 1 cells on 1 cores
+2026-05-09 09:01:27,924 calphy.helpers INFO     pair_style: eam/fs
+2026-05-09 09:01:27,924 calphy.helpers INFO     pair_coeff: * * /cmmc/ptmp/pyironhb/pyiron_latest_env/share/iprpy/potential_LAMMPS/2009--Mendelev-M-I--Al-Mg--LAMMPS--ipr1/Al-Mg.eam.fs Al Mg
+2026-05-09 09:01:35,593 calphy.helpers INFO     At count 1 mean pressure is 4.14 bar, std 213.67, vol/atom 16.8949
+2026-05-09 09:01:35,593 calphy.helpers INFO     Pressure within tolerance
+2026-05-09 09:01:35,593 calphy.helpers INFO     finalized vol/atom 16.894866 at pressure 4.143795
+2026-05-09 09:01:35,593 calphy.helpers INFO     Avg box dimensions x: 12.220000, y: 12.220000, z:12.220000
+2026-05-09 09:01:39,152 calphy.helpers INFO     At count 1 mean k is 1.551120 std is 0.000000
+2026-05-09 09:01:39,152 calphy.helpers INFO     finalized sprint constants
+2026-05-09 09:01:39,152 calphy.helpers INFO     [np.float64(1.5511199871861319), 0.0775559993593066]
+2026-05-09 09:01:40,542 calphy.helpers INFO     Averaging routine finished in 12.618233 s
+2026-05-09 09:01:46,766 calphy.helpers INFO     Integration cycle 1 finished in 6.222842 s
+2026-05-09 09:01:46,772 calphy.helpers INFO     Report written in /cmmc/u/pchilaka/1_Work/Packages/phase_diagram_workflows/notebooks/Aluminium_free_energy/Al_ts/report.yaml
+2026-05-09 09:01:46,772 calphy.helpers INFO     Please cite the following publications:
+2026-05-09 09:01:46,772 calphy.helpers INFO     - 10.1103/PhysRevMaterials.5.103801
+2026-05-09 09:01:46,774 calphy.helpers INFO     Starting temperature sweep cycle: 1
+2026-05-09 09:01:47,709 calphy.helpers INFO     Starting equilibration: 1
+2026-05-09 09:01:48,575 calphy.helpers INFO     Finished equilibration: 1
+2026-05-09 09:01:48,696 calphy.helpers INFO     Starting equilibration with constrained com: 1
+2026-05-09 09:01:49,564 calphy.helpers INFO     Finished equilibration with constrained com: 1
+2026-05-09 09:01:49,764 calphy.helpers INFO     Started forward sweep: 1
+2026-05-09 09:01:51,992 calphy.helpers INFO     Finished forward sweep: 1
+2026-05-09 09:01:54,204 calphy.helpers INFO     Started backward sweep: 1
+2026-05-09 09:01:56,500 calphy.helpers INFO     Finished backward sweep: 1
+2026-05-09 09:01:57,680 calphy.helpers INFO     Please cite the following publications:
+2026-05-09 09:01:57,681 calphy.helpers INFO     - 10.1103/PhysRevLett.83.3973
+2026-05-09 09:01:57,681 calphy.helpers INFO     TS integration cycle 1 finished in 10.907041 s
+2026-05-09 09:01:57,707 calphy.helpers INFO     Maximum energy dissipation along the temperature scaling part: 0.0006104979588252846 eV/atom
+2026-05-09 09:01:57,707 calphy.helpers WARNING  Found max energy dissipation of 0.0006104979588252846 along the temperature scaling path. Please ensure there are no structural changes!

@@ -1,0 +1,96 @@
+calculations:
+- berendsen:
+    barostat_damping: 100.0
+    thermostat_damping: 100.0
+  composition_scaling:
+    output_chemical_composition: {}
+    restrictions: []
+  element:
+  - Al
+  - Mg
+  equilibration_control: nose-hoover
+  file_format: lammps-data
+  fix_potential_path: true
+  folder_prefix: null
+  inputfile: ''
+  kernel: 0
+  lammps_executable: null
+  lattice: /cmmc/u/pchilaka/1_Work/Packages/phase_diagram_workflows/notebooks/Aluminium_free_energy/Al_fe/fe-input_structure.data-solid-300-0.0.data
+  lattice_constant: 0
+  mass:
+  - 26.9815385
+  - 1.0
+  materials_project:
+    conventional: true
+    target_natoms: 1500
+  md:
+    barostat_damping: 0.1
+    cmdargs: ''
+    init_commands: []
+    n_cycles: 100
+    n_every_steps: 10
+    n_repeat_steps: 10
+    n_small_steps: 10000
+    thermostat_damping: 0.1
+    timestep: 0.001
+  melting_cycle: false
+  melting_temperature:
+    attempts: 5
+    guess: null
+    step: 200
+  mode: fe
+  monte_carlo:
+    allow_all_swaps: true
+    forward_swap_types: []
+    n_steps: 1
+    n_swaps: 0
+    reverse_swap_types: []
+    use_custom_lammps: false
+  mpi_executable: null
+  n_elements: 2
+  n_equilibration_steps: 2500
+  n_iterations: 1
+  n_print_steps: 1000
+  n_switching_steps: 2500
+  nose_hoover:
+    barostat_damping: 0.1
+    thermostat_damping: 0.1
+  npt: true
+  pair_coeff:
+  - '* * /cmmc/ptmp/pyironhb/pyiron_latest_env/share/iprpy/potential_LAMMPS/2009--Mendelev-M-I--Al-Mg--LAMMPS--ipr1/Al-Mg.eam.fs
+    Al Mg'
+  pair_mode: null
+  pair_style:
+  - eam/fs
+  phase_name: ''
+  potential_file: null
+  pressure: 0
+  pressure_coupling: null
+  queue:
+    commands: []
+    cores: 1
+    jobname: calphy
+    memory: 3GB
+    options: {}
+    queuename: ''
+    scheduler: local
+    walltime: '23:59:00'
+  reference_composition: 0.0
+  reference_phase: solid
+  repeat:
+  - 1
+  - 1
+  - 1
+  script_mode: false
+  spring_constants: null
+  temperature: 300.0
+  temperature_high: 0.0
+  tolerance:
+    lattice_constant: 0.0002
+    liquid_fraction: 0.05
+    pressure: 10.0
+    solid_fraction: 0.7
+    spring_constant: 0.1
+  uhlenbeck_ford_model:
+    p: 50.0
+    sigma: 1.5
