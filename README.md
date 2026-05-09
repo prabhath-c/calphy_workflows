@@ -41,43 +41,6 @@ pip install -e .
 - `executorlib` - Parallel execution framework (executor feature)
 - `pylammpsmpi` - MPI-enabled LAMMPS library (executor feature)
 
-## 💻 **Usage**
-
-### **Basic Usage**
-```python
-from phase_diagram_workflows import calculator
-
-# Create a solid free energy calculation
-solid_calc = calculator.Solid(
-    structure=ase_atoms_object,
-    temperature=300,
-    pressure=0.0,
-    potential="Al_eam.fs"
-)
-
-# Run the calculation
-solid_calc.run()
-
-# Get results
-free_energy = solid_calc.get_free_energy()
-```
-
-### **Executor-Based Parallel Execution**
-```python
-from phase_diagram_workflows import calculator
-from executorlib import SingleNodeExecutor
-from pylammpsmpi import LammpsLibrary
-
-# Initialize executor
-executor = SingleNodeExecutor()
-lmp_lib = LammpsLibrary(executor=executor)
-
-# Run calculation with executor
-result = calculator.run_calphy_with_executor(
-    input_class=solid_calc,
-    lmp=lmp_lib
-)
-```
 
 ## 📂 **Project Structure**
 ```
