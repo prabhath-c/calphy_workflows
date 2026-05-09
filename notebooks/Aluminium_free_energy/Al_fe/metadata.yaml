@@ -1,0 +1,13 @@
+files:
+  input_configuration.data: input atomic configuration
+  input_file.yml: input file
+  report.yaml: results after thermodynamic integration
+publications:
+- 10.1103/PhysRevMaterials.5.103801
+- 10.1016/j.commatsci.2015.10.050
+software:
+  doi: 10.5281/zenodo.10527452
+  name: calphy
+  repository: https://github.com/ICAMS/calphy
+  version: 1.7.2
+  webpage: https://calphy.org/
