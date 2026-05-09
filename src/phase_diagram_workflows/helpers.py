@@ -230,12 +230,24 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
             if not config_list or not config_list[0]:
                 raise ValueError("Config data is empty")
 
-            [pair_style, pair_coeff] = [
-                line.replace("pair_style", "")
-                    .replace("pair_coeff", "")
-                    .strip()
-                for line in config_list[0]
-                ]
+            pair_style = None
+            pair_coeff = None
+            for line in config_list[0]:
+                stripped_line = str(line).strip()
+                if stripped_line.startswith("pair_style"):
+                    pair_style = stripped_line.replace("pair_style", "", 1).strip()
+                elif stripped_line.startswith("pair_coeff"):
+                    pair_coeff = stripped_line.replace("pair_coeff", "", 1).strip()
+
+            missing_items = [
+                item
+                for item, value in (("pair_style", pair_style), ("pair_coeff", pair_coeff))
+                if not value
+            ]
+            if missing_items:
+                raise ValueError(
+                    f"Could not extract {', '.join(missing_items)} from potential_df['Config']"
+                )
             
             # update dict if missing
             if "pair_style" not in calphy_parameters:
@@ -385,7 +397,7 @@ def _build_calphy_config(
                 working_directory=working_directory
             )
             
-            lattice_file = f'{working_directory}/input_structure.data'
+            lattice_file = os.path.join(working_directory, 'input_structure.data')
             calphy_parameters["lattice"] = lattice_file
 
         ## FIXME: Check calphy pyiron job for handling elements, masses etc

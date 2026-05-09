@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 from ase.atoms import Atoms
 from calphy import Calculation, Solid, Liquid
@@ -82,7 +82,7 @@ def calc_free_energy_with_calphy(
     input_structure: Atoms,
     potential_df: pd.DataFrame,
     calphy_parameters: Dict[str, Any],
-    working_directory: str,
+    working_directory: Optional[str],
     user_dict: Dict[str, Any],
 ) -> Tuple[Calculation, pd.DataFrame]:
     """Main function to calculate free energy using calphy with LAMMPS potentials.
@@ -120,7 +120,8 @@ def calc_free_energy_with_calphy(
     Raises
     ------
     ValueError
-        If required parameters are missing or invalid
+        If required parameters are missing or invalid. Type and value issues
+        raised during validation are normalized to ValueError.
     RuntimeError
         If calculation execution fails
     """
@@ -129,7 +130,7 @@ def calc_free_energy_with_calphy(
         _validate_input_structure(input_structure)
         _validate_potential_df(potential_df)
         _validate_calphy_parameters(calphy_parameters)
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         raise ValueError(f"Input validation failed: {str(e)}") from e
 
     try:
