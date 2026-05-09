@@ -3,7 +3,7 @@
 🔬 **Advanced workflows for phase diagram calculations using Calphy and LAMMPS**
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-BSD%203--Clause-blue)](LICENSE)
 [![Calphy](https://img.shields.io/badge/built_with-calphy-orange)](https://github.com/ICAMS/calphy)
 
 ## 📋 **Overview**
@@ -74,7 +74,7 @@ Contributions are welcome! Please follow these steps:
 
 ## 📜 **License**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **BSD 3-Clause License** - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 **Support**
 
