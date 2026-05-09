@@ -1,5 +1,6 @@
 import os
 from typing import Dict, Any, Tuple, Optional
+from pathlib import Path
 
 from ase.atoms import Atoms
 from calphy import Calculation, Solid, Liquid
@@ -37,7 +38,8 @@ def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
         If calphy execution fails
     """
     # Use the working directory from the lattice path (this is where files are written)
-    working_directory = str(input_class.lattice.parent)
+    lattice_path = Path(input_class.lattice)
+    working_directory = str(lattice_path.parent)
 
     with _working_directory_context(working_directory):
         try:
