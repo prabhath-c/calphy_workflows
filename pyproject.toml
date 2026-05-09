@@ -25,3 +25,4 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "black", "ruff", "mypy"]
+executor = ["executorlib>=1.0.0", "pylammpsmpi>=0.1.0"]
