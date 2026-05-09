@@ -20,11 +20,6 @@ The package offers both traditional serial execution and advanced parallel execu
 
 ## 📦 **Installation**
 
-### **With Executor Support** (for parallel execution)
-```bash
-pip install "phase_diagram_workflows[executor]"
-```
-
 ### **From Source**
 ```bash
 git clone https://github.com/prabhath-c/phase_diagram_workflows.git
