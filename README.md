@@ -8,7 +8,7 @@
 
 ## 📋 **Overview**
 
-**Phase Diagram Workflows** is a powerful Python package for computational materials science that provides robust workflows for calculating free energies and phase diagrams using [Calphy](https://github.com/phasesresearchlab/calphy) and LAMMPS.
+**Phase Diagram Workflows** is a powerful Python package for computational materials science that provides robust workflows for calculating free energies and phase diagrams using [Calphy](https://github.com/ICAMS/calphy) and LAMMPS.
 
 The package offers both traditional serial execution and advanced parallel execution via executorlib, making it suitable for both small-scale testing and large-scale HPC calculations.
 
