@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "calphy_workflows"
+name = "phase_diagrams_workflows"
 version = "0.1.0"
 description = "Workflows to run calphy free energy calculations with executorlib."
 authors = [
