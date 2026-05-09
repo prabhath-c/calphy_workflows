@@ -1,12 +1,12 @@
 import os
 from typing import Dict, Any, Tuple, Optional
+from pathlib import Path
 
 from ase.atoms import Atoms
 from calphy import Calculation, Solid, Liquid
 from calphy.routines import routine_fe, routine_ts
 from calphy.postprocessing import gather_results
 import pandas as pd
-
 
 from .helpers import (
     _working_directory_context,
@@ -17,14 +17,18 @@ from .helpers import (
     _validate_calphy_parameters,
 )
 
-def _run_calphy(input_class: Calculation) -> None:
+def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
     """Execute calphy calculation based on the input configuration.
-    
+
     Parameters
     ----------
     input_class : Calculation
         Calphy Calculation object with all parameters configured
-        
+    lmp : Optional[Any], optional
+        Optional LAMMPS library object from pylammpsmpi with embedded executor.
+        If provided, the calculation will use this lmp object instead of creating
+        its own, enabling executor-based parallel execution.
+
     Raises
     ------
     ValueError
@@ -33,13 +37,22 @@ def _run_calphy(input_class: Calculation) -> None:
     RuntimeError
         If calphy execution fails
     """
-    curr_wd = os.getcwd()
-    with _working_directory_context(curr_wd):
+    # Use the working directory from the lattice path (this is where files are written)
+    lattice_path = Path(input_class.lattice)
+    working_directory = str(lattice_path.parent)
+
+    with _working_directory_context(working_directory):
         try:
             if input_class.reference_phase == "solid":
-                job = Solid(calculation=input_class, simfolder=curr_wd)
+                if lmp is not None:
+                    job = Solid(calculation=input_class, simfolder=working_directory, lmp=lmp)
+                else:
+                    job = Solid(calculation=input_class, simfolder=working_directory)
             elif input_class.reference_phase == "liquid":
-                job = Liquid(calculation=input_class, simfolder=curr_wd)
+                if lmp is not None:
+                    job = Liquid(calculation=input_class, simfolder=working_directory, lmp=lmp)
+                else:
+                    job = Liquid(calculation=input_class, simfolder=working_directory)
             else:
                 raise ValueError(
                     f"Invalid reference_phase: {input_class.reference_phase}. "
@@ -63,12 +76,12 @@ def _run_calphy(input_class: Calculation) -> None:
 
 def gather_calphy_results(parent_directory: str) -> pd.DataFrame:
     """Gather and return results from calphy calculations.
-    
+
     Parameters
     ----------
     parent_directory : str
         Path to parent directory containing calphy calculation folders
-        
+
     Returns
     -------
     pd.DataFrame
@@ -83,13 +96,14 @@ def calc_free_energy_with_calphy(
     potential_df: pd.DataFrame,
     calphy_parameters: Dict[str, Any],
     working_directory: Optional[str],
-    user_dict: Dict[str, Any],
+    lmp: Optional[Any] = None,
+    metadata_dict: Optional[Dict[str, Any]] = None
 ) -> Tuple[Calculation, pd.DataFrame]:
     """Main function to calculate free energy using calphy with LAMMPS potentials.
-    
+
     Orchestrates the entire workflow: configures calphy parameters, writes structure
     files in LAMMPS format, executes calphy calculations, and gathers results.
-    
+
     Parameters
     ----------
     input_structure : Atoms
@@ -107,16 +121,43 @@ def calc_free_energy_with_calphy(
         - file_format: 'lammps-data'
     working_directory : str
         Directory where calculations will be run
-    user_dict : Dict[str, Any]
-        Additional user-defined parameters (currently unused, reserved for future)
-        
+    lmp : Optional[Any], optional
+        Optional LAMMPS library object from pylammpsmpi with embedded executor.
+        If provided, the calculation will use this lmp object instead of creating
+        its own, enabling executor-based parallel execution.
+    metadata_dict : Optional[Dict[str, Any]], optional
+        Optional dictionary for storing user-defined metadata in executorlib's cache.
+        Used when lmp is provided to enable result caching and retrieval.
+
     Returns
     -------
     Tuple[Calculation, pd.DataFrame]
         Tuple containing:
         - Calculation object: The calphy Calculation instance used
         - pd.DataFrame: Results DataFrame from gather_calphy_results()
-        
+
+    Examples
+    --------
+    # Basic usage without executor
+    result = calc_free_energy_with_calphy(
+        input_structure=structure,
+        potential_df=potential_df,
+        calphy_parameters=params,
+        working_directory='output_dir'
+    )
+
+    # With executor
+    executor = SingleNodeExecutor()
+    lmp = LammpsLibrary(cores=1, executor=executor)
+    result = calc_free_energy_with_calphy(
+        input_structure=structure,
+        potential_df=potential_df,
+        calphy_parameters=params,
+        working_directory='output_dir',
+        lmp=lmp,
+        metadata_dict={'project': 'my_project', 'version': '1.0'}
+    )
+
     Raises
     ------
     ValueError
@@ -130,6 +171,7 @@ def calc_free_energy_with_calphy(
         _validate_input_structure(input_structure)
         _validate_potential_df(potential_df)
         _validate_calphy_parameters(calphy_parameters)
+        print("Input validation successful. Proceeding with calculation.")
     except (TypeError, ValueError) as e:
         raise ValueError(f"Input validation failed: {str(e)}") from e
 
@@ -149,18 +191,18 @@ def calc_free_energy_with_calphy(
             )
 
             # _save_calphy_input_yaml(
-            #     input_class=input_class, 
+            #     input_class=input_class,
             #     folder_name=working_directory
             # )
 
-            _run_calphy(input_class=input_class)
+            _run_calphy(input_class=input_class, lmp=lmp)
 
         abs_working_dir = os.path.abspath(working_directory)
         parent_dir = os.path.dirname(abs_working_dir)
         df = gather_calphy_results(parent_dir)
 
         return input_class, df
-    
+
     except (ValueError, RuntimeError):
         raise
     except Exception as e:
