@@ -17,13 +17,17 @@ from .helpers import (
     _validate_calphy_parameters,
 )
 
-def _run_calphy(input_class: Calculation) -> None:
+def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
     """Execute calphy calculation based on the input configuration.
     
     Parameters
     ----------
     input_class : Calculation
         Calphy Calculation object with all parameters configured
+    lmp : Optional[Any], optional
+        Optional LAMMPS library object from pylammpsmpi with embedded executor.
+        If provided, the calculation will use this lmp object instead of creating
+        its own, enabling executor-based parallel execution.
         
     Raises
     ------
@@ -37,9 +41,15 @@ def _run_calphy(input_class: Calculation) -> None:
     with _working_directory_context(curr_wd):
         try:
             if input_class.reference_phase == "solid":
-                job = Solid(calculation=input_class, simfolder=curr_wd)
+                if lmp is not None:
+                    job = Solid(calculation=input_class, simfolder=curr_wd, lmp=lmp)
+                else:
+                    job = Solid(calculation=input_class, simfolder=curr_wd)
             elif input_class.reference_phase == "liquid":
-                job = Liquid(calculation=input_class, simfolder=curr_wd)
+                if lmp is not None:
+                    job = Liquid(calculation=input_class, simfolder=curr_wd, lmp=lmp)
+                else:
+                    job = Liquid(calculation=input_class, simfolder=curr_wd)
             else:
                 raise ValueError(
                     f"Invalid reference_phase: {input_class.reference_phase}. "
@@ -83,7 +93,8 @@ def calc_free_energy_with_calphy(
     potential_df: pd.DataFrame,
     calphy_parameters: Dict[str, Any],
     working_directory: Optional[str],
-    user_dict: Dict[str, Any],
+    lmp: Optional[Any] = None,
+    metadata_dict: Optional[Dict[str, Any]] = None
 ) -> Tuple[Calculation, pd.DataFrame]:
     """Main function to calculate free energy using calphy with LAMMPS potentials.
     
@@ -107,8 +118,13 @@ def calc_free_energy_with_calphy(
         - file_format: 'lammps-data'
     working_directory : str
         Directory where calculations will be run
-    user_dict : Dict[str, Any]
-        Additional user-defined parameters (currently unused, reserved for future)
+    lmp : Optional[Any], optional
+        Optional LAMMPS library object from pylammpsmpi with embedded executor.
+        If provided, the calculation will use this lmp object instead of creating
+        its own, enabling executor-based parallel execution.
+    metadata_dict : Optional[Dict[str, Any]], optional
+        Optional dictionary for storing user-defined metadata in executorlib's cache.
+        Used when lmp is provided to enable result caching and retrieval.
         
     Returns
     -------
@@ -116,6 +132,28 @@ def calc_free_energy_with_calphy(
         Tuple containing:
         - Calculation object: The calphy Calculation instance used
         - pd.DataFrame: Results DataFrame from gather_calphy_results()
+        
+    Examples
+    --------
+    # Basic usage without executor
+    result = calc_free_energy_with_calphy(
+        input_structure=structure,
+        potential_df=potential_df,
+        calphy_parameters=params,
+        working_directory='output_dir'
+    )
+    
+    # With executor
+    executor = SingleNodeExecutor()
+    lmp = LammpsLibrary(cores=1, executor=executor)
+    result = calc_free_energy_with_calphy(
+        input_structure=structure,
+        potential_df=potential_df,
+        calphy_parameters=params,
+        working_directory='output_dir',
+        lmp=lmp,
+        metadata_dict={'project': 'my_project', 'version': '1.0'}
+    )
         
     Raises
     ------
@@ -153,7 +191,7 @@ def calc_free_energy_with_calphy(
             #     folder_name=working_directory
             # )
 
-            _run_calphy(input_class=input_class)
+            _run_calphy(input_class=input_class, lmp=lmp)
 
         abs_working_dir = os.path.abspath(working_directory)
         parent_dir = os.path.dirname(abs_working_dir)
