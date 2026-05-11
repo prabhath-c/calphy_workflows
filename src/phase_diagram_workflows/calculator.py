@@ -109,7 +109,7 @@ def calc_free_energy_with_calphy(
     input_structure : Atoms
         ASE Atoms object representing the crystal structure
     potential_df : pd.DataFrame
-        DataFrame containing potential information from pyiron_lammps
+        DataFrame containing potential information in pyiron-compatible format
     calphy_parameters : Dict[str, Any]
         Dictionary with calphy parameters including:
         - mode: 'fe' (free energy) or 'ts' (temperature scaling)
