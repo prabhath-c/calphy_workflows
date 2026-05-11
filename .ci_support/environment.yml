@@ -1,0 +1,28 @@
+name: phase-diagram-workflows-test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Python and build tools
+  - python=3.13
+  - pip
+  - hatchling
+
+  # Core dependencies
+  - ase
+  - calphy
+  - pandas
+  - lammpsparser
+  - ruamel.yaml
+  - pydantic>=2,<3
+
+  # Development dependencies
+  - pytest
+  - coverage
+  - black
+  - ruff
+  - mypy
+
+  # Executor dependencies
+  - executorlib>=1.0.0
+  - pylammpsmpi>=0.1.0
