@@ -33,7 +33,7 @@ pip install -e .
 - `ase` - Atomic Simulation Environment
 - `calphy` - Calphy free energy calculation library
 - `pandas` - Data analysis and manipulation
-- `pyiron-lammps` - PyIron LAMMPS integration
+- `lammpsparser` - LAMMPS structure and output parsing utilities
 - `ruamel.yaml` - YAML configuration support
 - `pydantic` - Data validation and settings management
 

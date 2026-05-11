@@ -7,7 +7,7 @@ from calphy import Calculation
 from contextlib import contextmanager
 import pandas as pd
 from pydantic import ValidationError
-from pyiron_lammps.structure import structure_to_lammps, LammpsStructure
+from lammpsparser import write_lammps_structure
 from ruamel.yaml import YAML
 
 def _validate_input_structure(structure: Atoms) -> None:
@@ -141,16 +141,17 @@ def _write_structure(
 ) -> None:
     """Write ASE structure to LAMMPS data file format.
     
-    Uses pyiron_lammps to convert ASE Atoms object to LAMMPS format and
+    Uses lammpsparser to convert ASE Atoms object to LAMMPS format and
     writes it to the specified working directory. Validates that all elements
-    in the structure are supported by the selected potential.
+    in the structure are supported by the selected potential. LAMMPS units are
+    fixed to ``metal`` in this helper.
     
     Parameters
     ----------
     structure : Atoms
         ASE Atoms object to write
     potential_df : pd.DataFrame
-        Potential DataFrame from pyiron_lammps
+        Potential DataFrame in pyiron-compatible format
     file_name : str
         Output file name (will be written to working_directory)
     working_directory : str
@@ -168,25 +169,24 @@ def _write_structure(
         If file writing fails
     """
     try:
-        lmp_structure = LammpsStructure()
-        lmp_structure.potential = potential_df
-        lmp_structure.atom_type = "atomic"
+        potential_elements = potential_df["Species"].to_list()[0]
+        structure_elements = set(structure.get_chemical_symbols())
+        potential_elements_set = set(potential_elements)
 
-        # lmp_structure.el_eam_lst = list(lmp_structure.potential ["Species"][0])
-        lmp_structure.el_eam_lst = lmp_structure.potential['Species'].to_list()[0]
-        lmp_structure.structure = structure_to_lammps(structure)
-
-        structure_elements = set(lmp_structure.structure.get_chemical_symbols())
-        potential_elements = set(lmp_structure.el_eam_lst)
-        
-        if not structure_elements.issubset(potential_elements):
-            unsupported = structure_elements - potential_elements
+        if not structure_elements.issubset(potential_elements_set):
+            unsupported = structure_elements - potential_elements_set
             raise ValueError(
                 f"The selected potential does not support element(s): {unsupported}. "
-                f"Potential supports: {potential_elements}"
+                f"Potential supports: {potential_elements_set}"
             )
-        
-        lmp_structure.write_file(file_name=file_name, cwd=working_directory)
+
+        write_lammps_structure(
+            structure=structure,
+            potential_elements=potential_elements,
+            units="metal",
+            file_name=file_name,
+            working_directory=working_directory,
+        )
     
     except ValueError:
         raise
@@ -200,14 +200,14 @@ def _ensure_potential(calphy_parameters: Dict[str, Any], potential_df: pd.DataFr
     """Extract and ensure pair_style and pair_coeff parameters from potential.
     
     If pair_style or pair_coeff are missing from calphy_parameters, extracts them
-    from the potential DataFrame (pyiron_lammps format).
+    from the potential DataFrame (pyiron-compatible format).
     
     Parameters
     ----------
     calphy_parameters : Dict[str, Any]
         Calphy parameters dictionary to update
     potential_df : pd.DataFrame
-        Potential DataFrame from pyiron_lammps with 'Config' column
+        Potential DataFrame in pyiron-compatible format with 'Config' column
         
     Returns
     -------
@@ -278,7 +278,7 @@ def _ensure_elements_and_masses(
     input_structure : Atoms
         ASE Atoms object with the structure
     potential_df : pd.DataFrame
-        Potential DataFrame from pyiron_lammps
+        Potential DataFrame in pyiron-compatible format
     calphy_parameters : Dict[str, Any]
         Calphy parameters dictionary to update
         
@@ -365,7 +365,7 @@ def _build_calphy_config(
     input_structure : Atoms
         ASE Atoms object with the structure
     potential_df : pd.DataFrame
-        Potential DataFrame from pyiron_lammps
+        Potential DataFrame in pyiron-compatible format
     calphy_parameters : Dict[str, Any]
         Parameters for calphy calculation
     working_directory : Optional[str]
