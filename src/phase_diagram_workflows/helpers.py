@@ -143,7 +143,8 @@ def _write_structure(
     
     Uses lammpsparser to convert ASE Atoms object to LAMMPS format and
     writes it to the specified working directory. Validates that all elements
-    in the structure are supported by the selected potential.
+    in the structure are supported by the selected potential. LAMMPS units are
+    fixed to ``metal`` in this helper.
     
     Parameters
     ----------
