@@ -6,6 +6,9 @@
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue)](LICENSE)
 [![Calphy](https://img.shields.io/badge/built_with-calphy-orange)](https://github.com/ICAMS/calphy)
 
+[![Tests](https://github.com/prabhath-c/phase_diagram_workflows/actions/workflows/tests.yml/badge.svg)](https://github.com/prabhath-c/phase_diagram_workflows/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/prabhath-c/phase_diagram_workflows/branch/main/graph/badge.svg)](https://codecov.io/gh/prabhath-c/phase_diagram_workflows)
+
 ## 📋 **Overview**
 
 **Phase Diagram Workflows** is a powerful Python package for computational materials science that provides robust workflows for calculating free energies and phase diagrams using [Calphy](https://github.com/ICAMS/calphy) and LAMMPS.
