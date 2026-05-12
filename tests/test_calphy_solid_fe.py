@@ -63,7 +63,7 @@ class TestValidatePotentialDf:
             _validate_potential_df(df)
 
 
-class TestValidateCalphydParameters:
+class TestValidateCalphyParameters:
     """Tests for _validate_calphy_parameters()"""
     
     def test_valid_parameters(self):
