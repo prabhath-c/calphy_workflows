@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.11', '3.12', '3.13']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Mambaforge
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+        miniforge-version: latest
+        channels: conda-forge
+        conda-remove-defaults: "true"
+        environment-file: .ci_support/environment.yml
+
+    - name: Install package
+      run: pip install .[dev,executor]
+
+    - name: Run tests
+      run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
+
+    - name: Upload coverage reports to Codecov
+      if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false

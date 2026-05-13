@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import os
 from typing import Dict, Any, Tuple, Optional
 
 from ase.data import chemical_symbols, atomic_masses
 from ase.atoms import Atoms
-from calphy import Calculation
 from contextlib import contextmanager
 import pandas as pd
 from pydantic import ValidationError
@@ -323,6 +324,26 @@ def _ensure_elements_and_masses(
             f"Failed to set elements and masses: {type(e).__name__}: {str(e)}"
         ) from e
 
+def _validate_metadata(metadata: Dict[str, Any]) -> None:
+    """Validate the metadata dictionary.
+
+    Any dict (including empty) is accepted. Raises TypeError if the argument
+    is not a dict.
+
+    Parameters
+    ----------
+    metadata : Dict[str, Any]
+        Metadata dictionary to validate
+
+    Raises
+    ------
+    TypeError
+        If metadata is not a dictionary
+    """
+    if not isinstance(metadata, dict):
+        raise TypeError(f"metadata must be a dict, got {type(metadata).__name__}")
+
+
 def _create_input_class(input_parameters: Dict[str, Any]) -> Calculation:
     """Create and validate a calphy Calculation object from input parameters.
     
@@ -342,6 +363,7 @@ def _create_input_class(input_parameters: Dict[str, Any]) -> Calculation:
         If parameters fail validation against calphy's Calculation model
     """
     try:
+        from calphy import Calculation
         return Calculation.model_validate(input_parameters)
     except ValidationError as e:
         raise ValueError(f"Invalid parameters: {e}") from e

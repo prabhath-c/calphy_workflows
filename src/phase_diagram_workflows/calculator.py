@@ -1,11 +1,10 @@
+from __future__ import annotations
+
 import os
 from typing import Dict, Any, Tuple, Optional
 from pathlib import Path
 
 from ase.atoms import Atoms
-from calphy import Calculation, Solid, Liquid
-from calphy.routines import routine_fe, routine_ts
-from calphy.postprocessing import gather_results
 import pandas as pd
 
 from .helpers import (
@@ -43,6 +42,8 @@ def _run_calphy(input_class: Calculation, lmp: Optional[Any] = None) -> None:
 
     with _working_directory_context(working_directory):
         try:
+            from calphy import Solid, Liquid
+            from calphy.routines import routine_fe, routine_ts
             if input_class.reference_phase == "solid":
                 if lmp is not None:
                     job = Solid(calculation=input_class, simfolder=working_directory, lmp=lmp)
@@ -88,6 +89,7 @@ def gather_calphy_results(parent_directory: str) -> pd.DataFrame:
         DataFrame containing aggregated results from all calculations
     """
     with _working_directory_context(parent_directory):
+        from calphy.postprocessing import gather_results
         df = gather_results('.')
     return df
 
@@ -97,7 +99,8 @@ def calc_free_energy_with_calphy(
     calphy_parameters: Dict[str, Any],
     working_directory: Optional[str],
     lmp: Optional[Any] = None,
-    metadata_dict: Optional[Dict[str, Any]] = None
+    metadata_dict: Optional[Dict[str, Any]] = None,
+    user_dict: Optional[Dict[str, Any]] = None
 ) -> Tuple[Calculation, pd.DataFrame]:
     """Main function to calculate free energy using calphy with LAMMPS potentials.
 
@@ -128,6 +131,9 @@ def calc_free_energy_with_calphy(
     metadata_dict : Optional[Dict[str, Any]], optional
         Optional dictionary for storing user-defined metadata in executorlib's cache.
         Used when lmp is provided to enable result caching and retrieval.
+    user_dict : Optional[Dict[str, Any]], optional
+        Optional dictionary for additional user-defined parameters. Accepted but
+        currently unused; reserved for future extension.
 
     Returns
     -------
