@@ -311,8 +311,8 @@ class TestExecutorIntegration:
     ):
         """Test executor-based workflow with metadata and LAMMPS library"""
         from phase_diagram_workflows.calculator import calc_free_energy_with_calphy
-        executorlib = pytest.importorskip('executorlib')
-        pylammpsmpi = pytest.importorskip('pylammpsmpi')
+        import executorlib
+        import pylammpsmpi
         SingleNodeExecutor = executorlib.SingleNodeExecutor
         LammpsLibrary = pylammpsmpi.LammpsLibrary
 
@@ -404,7 +404,7 @@ class TestExecutorIntegration:
     def test_lammps_library_integration(self, mock_build_config, mock_gather, mock_run_calphy):
         """Test that LAMMPS library parameter is handled correctly"""
         from phase_diagram_workflows.calculator import calc_free_energy_with_calphy
-        pylammpsmpi = pytest.importorskip('pylammpsmpi')
+        import pylammpsmpi
         LammpsLibrary = pylammpsmpi.LammpsLibrary
 
         # Setup mocks

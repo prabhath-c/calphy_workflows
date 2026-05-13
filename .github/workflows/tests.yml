@@ -13,10 +13,10 @@ jobs:
   test:
     name: Test on Python ${{ matrix.python-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.11', '3.12', '3.13', '3.14']
+      strategy:
+        matrix:
+          os: [ubuntu-latest]
+          python-version: ['3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
         environment-file: .ci_support/environment.yml
 
     - name: Install package
-      run: pip install .[dev]
+      run: pip install .[dev,executor]
 
     - name: Run tests
       run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
