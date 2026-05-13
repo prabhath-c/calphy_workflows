@@ -12,7 +12,7 @@ import pandas as pd
 from ase.atoms import Atoms
 from ase.build import bulk
 
-from phase_diagram_workflows.helpers import (
+from phase_diagram_workflows.calphy.helpers import (
     _validate_input_structure,
     _validate_potential_df,
     _validate_calphy_parameters,
