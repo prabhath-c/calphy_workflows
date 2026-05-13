@@ -31,7 +31,7 @@ jobs:
         environment-file: .ci_support/environment.yml
 
     - name: Install package
-      run: pip install .
+      run: pip install .[dev]
 
     - name: Run tests
       run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
