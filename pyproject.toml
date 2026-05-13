@@ -24,5 +24,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "coverage", "black", "ruff", "mypy"]
+dev = ["pytest", "pytest-cov", "black", "ruff", "mypy"]
 executor = ["executorlib>=1.0.0", "pylammpsmpi>=0.1.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phase_diagram_workflows"]

@@ -63,7 +63,7 @@ class TestValidatePotentialDf:
             _validate_potential_df(df)
 
 
-class TestValidateCalphydParameters:
+class TestValidateCalphyParameters:
     """Tests for _validate_calphy_parameters()"""
     
     def test_valid_parameters(self):
@@ -311,8 +311,10 @@ class TestExecutorIntegration:
     ):
         """Test executor-based workflow with metadata and LAMMPS library"""
         from phase_diagram_workflows.calculator import calc_free_energy_with_calphy
-        from executorlib import SingleNodeExecutor
-        from pylammpsmpi import LammpsLibrary
+        import executorlib
+        import pylammpsmpi
+        SingleNodeExecutor = executorlib.SingleNodeExecutor
+        LammpsLibrary = pylammpsmpi.LammpsLibrary
 
         # Setup mocks
         mock_calculation = Mock()
@@ -402,7 +404,8 @@ class TestExecutorIntegration:
     def test_lammps_library_integration(self, mock_build_config, mock_gather, mock_run_calphy):
         """Test that LAMMPS library parameter is handled correctly"""
         from phase_diagram_workflows.calculator import calc_free_energy_with_calphy
-        from pylammpsmpi import LammpsLibrary
+        import pylammpsmpi
+        LammpsLibrary = pylammpsmpi.LammpsLibrary
 
         # Setup mocks
         mock_calculation = Mock()

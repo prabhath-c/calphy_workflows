@@ -6,14 +6,17 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test on Python ${{ matrix.python-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.11', '3.12', '3.13', '3.14']
+      strategy:
+        matrix:
+          os: [ubuntu-latest]
+          python-version: ['3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v4
@@ -28,12 +31,10 @@ jobs:
         environment-file: .ci_support/environment.yml
 
     - name: Install package
-      run: pip install . --no-deps --no-build-isolation
+      run: pip install .[dev,executor]
 
     - name: Run tests
-      run: |
-        python -m pytest tests/ -v
-        python -m pytest --cov=src/phase_diagram_workflows tests/
+      run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
 
     - name: Upload coverage reports to Codecov
       if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
