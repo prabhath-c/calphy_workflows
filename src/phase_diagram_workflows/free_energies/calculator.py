@@ -5,9 +5,10 @@ from typing import Dict, Any, Tuple, Optional
 from pathlib import Path
 
 from ase.atoms import Atoms
+from calphy import Calculation
 import pandas as pd
 
-from .helpers import (
+from phase_diagram_workflows.free_energies.helpers import (
     _working_directory_context,
     _save_calphy_input_yaml,
     _build_calphy_config,
