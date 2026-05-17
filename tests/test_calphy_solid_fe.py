@@ -12,7 +12,7 @@ import pandas as pd
 from ase.atoms import Atoms
 from ase.build import bulk
 
-from phase_diagram_workflows.calphy.helpers import (
+from phase_diagram_workflows.free_energies.helpers import (
     _validate_input_structure,
     _validate_potential_df,
     _validate_calphy_parameters,
@@ -180,14 +180,14 @@ class TestWorkingDirectoryContext:
 class TestCalcFreeEnergyWithCalphydIntegration:
     """Integration tests for main workflow with mocking"""
     
-    @patch('phase_diagram_workflows.calphy.calculator._run_calphy')
-    @patch('phase_diagram_workflows.calphy.calculator.gather_calphy_results')
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._run_calphy')
+    @patch('phase_diagram_workflows.free_energies.calculator.gather_calphy_results')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_main_function_calls_correct_sequence(
         self, mock_build_config, mock_gather, mock_run_calphy
     ):
         """Test that main function calls helper functions in correct sequence"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
         
         # Setup mocks
         mock_calculation = Mock()
@@ -229,10 +229,10 @@ class TestCalcFreeEnergyWithCalphydIntegration:
 class TestInputValidationErrors:
     """Test main workflow input validation"""
 
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_invalid_structure_raises_error(self, mock_build_config):
         """Test that invalid structure raises ValueError"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
 
         structure = Atoms()  # Empty - invalid
         potential_df = pd.DataFrame({
@@ -255,10 +255,10 @@ class TestInputValidationErrors:
                     user_dict={}
                 )
 
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_invalid_potential_raises_error(self, mock_build_config):
         """Test that invalid potential DataFrame raises ValueError"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
 
         structure = bulk('Al', cubic=True)
         potential_df = pd.DataFrame({'NotSpecies': [['Al']]})  # Wrong column
@@ -278,10 +278,10 @@ class TestInputValidationErrors:
                     user_dict={}
                 )
 
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_invalid_parameters_raises_error(self, mock_build_config):
         """Test that invalid parameters raises ValueError"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
 
         structure = bulk('Al', cubic=True)
         potential_df = pd.DataFrame({
@@ -303,14 +303,14 @@ class TestInputValidationErrors:
 class TestExecutorIntegration:
     """Tests for executor-based workflow with metadata and LAMMPS library"""
 
-    @patch('phase_diagram_workflows.calphy.calculator._run_calphy')
-    @patch('phase_diagram_workflows.calphy.calculator.gather_calphy_results')
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._run_calphy')
+    @patch('phase_diagram_workflows.free_energies.calculator.gather_calphy_results')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_executor_workflow_with_metadata_and_lammps(
         self, mock_build_config, mock_gather, mock_run_calphy
     ):
         """Test executor-based workflow with metadata and LAMMPS library"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
         import executorlib
         import pylammpsmpi
         SingleNodeExecutor = executorlib.SingleNodeExecutor
@@ -360,12 +360,12 @@ class TestExecutorIntegration:
             assert isinstance(result_df, pd.DataFrame)
             assert not result_df.empty
 
-    @patch('phase_diagram_workflows.calphy.calculator._run_calphy')
-    @patch('phase_diagram_workflows.calphy.calculator.gather_calphy_results')
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._run_calphy')
+    @patch('phase_diagram_workflows.free_energies.calculator.gather_calphy_results')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_metadata_validation(self, mock_build_config, mock_gather, mock_run_calphy):
         """Test that metadata dictionary is handled correctly"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
 
         # Setup mocks
         mock_calculation = Mock()
@@ -398,12 +398,12 @@ class TestExecutorIntegration:
             assert result_calc == mock_calculation
             assert isinstance(result_df, pd.DataFrame)
 
-    @patch('phase_diagram_workflows.calphy.calculator._run_calphy')
-    @patch('phase_diagram_workflows.calphy.calculator.gather_calphy_results')
-    @patch('phase_diagram_workflows.calphy.calculator._build_calphy_config')
+    @patch('phase_diagram_workflows.free_energies.calculator._run_calphy')
+    @patch('phase_diagram_workflows.free_energies.calculator.gather_calphy_results')
+    @patch('phase_diagram_workflows.free_energies.calculator._build_calphy_config')
     def test_lammps_library_integration(self, mock_build_config, mock_gather, mock_run_calphy):
         """Test that LAMMPS library parameter is handled correctly"""
-        from phase_diagram_workflows.calphy.calculator import calc_free_energy_with_calphy
+        from phase_diagram_workflows.free_energies.calculator import calc_free_energy_with_calphy
         import pylammpsmpi
         LammpsLibrary = pylammpsmpi.LammpsLibrary
 
@@ -443,7 +443,7 @@ class TestExecutorIntegration:
 
     def test_metadata_content_validation(self):
         """Test metadata content validation"""
-        from phase_diagram_workflows.calphy.helpers import _validate_metadata
+        from phase_diagram_workflows.free_energies.helpers import _validate_metadata
 
         # Test valid metadata
         valid_metadata = {

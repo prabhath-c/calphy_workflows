@@ -8,7 +8,7 @@ from ase.atoms import Atoms
 from calphy import Calculation
 import pandas as pd
 
-from phase_diagram_workflows.calphy.helpers import (
+from phase_diagram_workflows.free_energies.helpers import (
     _working_directory_context,
     _save_calphy_input_yaml,
     _build_calphy_config,
