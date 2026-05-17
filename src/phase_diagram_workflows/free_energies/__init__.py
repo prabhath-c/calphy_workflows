@@ -1,2 +1,2 @@
-from . import calculator
-from . import helpers
+from . import ti_calculator
+from . import ti_helpers
