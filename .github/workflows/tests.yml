@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, structures ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, structures ]
 
 permissions:
   contents: read
@@ -110,11 +110,12 @@ jobs:
 
     - name: Run tests
       shell: bash -el {0}
-      run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
+      run: python -m pytest --cov=src/phase_diagram_workflows --cov-report=xml:coverage.xml tests/ -v
 
     - name: Upload coverage reports to Codecov
       if: matrix.python-version == '3.13' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
         fail_ci_if_error: false
