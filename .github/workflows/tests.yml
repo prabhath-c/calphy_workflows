@@ -30,6 +30,48 @@ jobs:
         conda-remove-defaults: "true"
         environment-file: .ci_support/environment.yml
 
+    - name: Ensure Python lammps module is available
+      shell: bash -el {0}
+      run: |
+        if ! python - <<'PY'
+        import importlib.util
+        import sys
+        if importlib.util.find_spec("lammps") is None:
+            sys.exit(1)
+        print("lammps already importable")
+        PY
+        then
+          echo "lammps missing from environment, trying conda install..."
+          conda install -n phase-diagram-workflows-test -y -c conda-forge lammps
+        fi
+
+        if ! python - <<'PY'
+        import importlib.util
+        import sys
+        if importlib.util.find_spec("lammps") is None:
+            sys.exit(1)
+        print("lammps import check passed after conda install")
+        PY
+        then
+          echo "Conda lammps unavailable, cloning and compiling LAMMPS from source..."
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ make
+          rm -rf /tmp/lammps-src /tmp/lammps-build
+          git clone --depth 1 --branch stable https://github.com/lammps/lammps.git /tmp/lammps-src
+          cmake -S /tmp/lammps-src/cmake -B /tmp/lammps-build \
+            -D BUILD_SHARED_LIBS=on \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D LAMMPS_EXCEPTIONS=on
+          cmake --build /tmp/lammps-build --target install-python -j2
+        fi
+
+        python - <<'PY'
+        import importlib.util
+        if importlib.util.find_spec("lammps") is None:
+            raise SystemExit("lammps Python module is still missing after install/build attempts")
+        print("Final check: lammps is importable")
+        PY
+
     - name: Install package
       run: pip install .[dev,executor]
 
