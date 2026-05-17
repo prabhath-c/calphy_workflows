@@ -33,6 +33,16 @@ jobs:
     - name: Ensure Python lammps module is available
       shell: bash -el {0}
       run: |
+        echo "=== Python environment diagnostics (pre-check) ==="
+        which python
+        python --version
+        python - <<'PY'
+        import sys, site
+        print("sys.executable:", sys.executable)
+        print("site-packages:", site.getsitepackages())
+        print("sys.path:", sys.path)
+        PY
+
         if ! python - <<'PY'
         import importlib.util
         import sys
@@ -55,27 +65,51 @@ jobs:
         then
           echo "Conda lammps unavailable, cloning and compiling LAMMPS from source..."
           sudo apt-get update
-          sudo apt-get install -y cmake g++ make
+          sudo apt-get install -y cmake build-essential libopenmpi-dev
           rm -rf /tmp/lammps-src /tmp/lammps-build
-          git clone --depth 1 --branch stable https://github.com/lammps/lammps.git /tmp/lammps-src
+          git clone --depth 1 https://github.com/lammps/lammps.git /tmp/lammps-src
           cmake -S /tmp/lammps-src/cmake -B /tmp/lammps-build \
             -D BUILD_SHARED_LIBS=on \
             -D CMAKE_BUILD_TYPE=Release \
-            -D LAMMPS_EXCEPTIONS=on
-          cmake --build /tmp/lammps-build --target install-python -j2
+            -D LAMMPS_EXCEPTIONS=on \
+            -D PKG_MANYBODY=on
+          cmake --build /tmp/lammps-build -j2
+
+          SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+          echo "Target site-packages: $SITE_PACKAGES"
+
+          sudo cp /tmp/lammps-build/liblammps.so /usr/local/lib/
+          sudo ldconfig
+
+          if [ -d "/tmp/lammps-src/python/lammps" ]; then
+            echo "Found package layout"
+            sudo cp -r /tmp/lammps-src/python/lammps "$SITE_PACKAGES/"
+          else
+            echo "Found single file layout"
+            sudo cp /tmp/lammps-src/python/lammps.py "$SITE_PACKAGES/"
+          fi
+
+          echo "PYTHONPATH=/tmp/lammps-src/python:${PYTHONPATH}" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
         fi
 
+        echo "=== Final lammps verification ==="
         python - <<'PY'
-        import importlib.util
-        if importlib.util.find_spec("lammps") is None:
-            raise SystemExit("lammps Python module is still missing after install/build attempts")
-        print("Final check: lammps is importable")
+        import sys
+        import lammps
+        print("sys.path:", sys.path)
+        print("lammps location:", lammps.__file__)
+        L = lammps.lammps()
+        print("LAMMPS instance created successfully")
+        L.close()
         PY
 
     - name: Install package
+      shell: bash -el {0}
       run: pip install .[dev,executor]
 
     - name: Run tests
+      shell: bash -el {0}
       run: python -m pytest --cov=src/phase_diagram_workflows tests/ -v
 
     - name: Upload coverage reports to Codecov
