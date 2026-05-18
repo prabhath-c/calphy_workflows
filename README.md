@@ -83,7 +83,7 @@ This project is licensed under the **BSD 3-Clause License** - see the [LICENSE](
 
 For issues, questions, or feature requests:
 - Open an issue on GitHub
-- Contact: prabhath.chilakalapudi@mpi-susmat.de
+- Contact: p.chilakalapudi@mpi-susmat.de
 
 ---
 
